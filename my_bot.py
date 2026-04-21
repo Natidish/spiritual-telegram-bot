@@ -140,11 +140,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ '{text}' በሚል ርዕስ በዳታቤዙ ውስጥ መረጃ አልተገኘም።")
 
 if __name__ == '__main__':
-    app = ApplicationBuilder().token().build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL, filter_media))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), content_guard))
-    
-    print("ቦቱ ስራ ጀምሯል...")
-    app.run_polling()
+    # ቶከኑ መኖሩን እናረጋግጥ
+    if not MY_TOKEN:
+        print("Error: BOT_TOKEN Environment Variable is not set!")
+    else:
+        # እዚህ ጋር MY_TOKEN መግባቱን አስተውል
+        app = ApplicationBuilder().token(MY_TOKEN).build()
+        
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL, filter_media))
+        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), content_guard))
+        
+        print("ቦቱ ስራ ጀምሯል...")
+        app.run_polling()
