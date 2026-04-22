@@ -77,7 +77,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❓ **ኢየሱስ አብ ነውን?**\n\nእግዚአብሔር አብ ነው፣ ኢየሱስ ወልድ ነው፣ መንፈስ ቅዱስ ነው።", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
-     if text == "ድኅነት(መዳን)":
+    if text == "ድኅነት(መዳን)":
         kb = [['የደህንነትን ማረጋገጫ 1'], ['የደህንነትን ማረጋገጫ 2'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🛡 **ድኅነት (መዳን)**\n\nድኅነት ማለት ከኃጢአት እና ከሞት የሚያዳን ጥምረት ነው።", 
                                        reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
