@@ -1,27 +1,21 @@
 import sqlite3
 import os
-# from dotenv import load_dotenv  # Render ላይ አያስፈልግም
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
-# .env ፋይልን ይጭናል (Render ላይ በ Environment Variables ስለሚተካ እንዲህ እናድርገው)
-# load_dotenv() 
+# Render ላይ BOT_TOKEN መኖሩን ያረጋግጣል
 MY_TOKEN = os.getenv("BOT_TOKEN")
 
-# --- አዳዲስ መከላከያዎች ---
+# ስድቦችን መከላከያ
 BANNED_WORDS = ["ውሻ", "ደደብ", "ደንቆሮ", "ባለጌ", "ውሸታም", "ሰነፍ", "ሌባ"] 
 
-# የዳታቤዝ ፋይል መንገድ በቋሚነት እንዲገኝ
+# የዳታቤዝ ፋይል መንገድ
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
 
 # --- Database ስራዎች ---
 def get_doctrine_from_db(title):
     try:
-        import os
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
-        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
@@ -29,8 +23,8 @@ def get_doctrine_from_db(title):
         clean_title = title.strip()
         cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
         
-        # ካላገኘው 'LIKE' ተጠቅሞ በግምት እንዲፈልግ እናደርጋለን
         result = cursor.fetchone()
+        # ካላገኘው 'LIKE' ተጠቅሞ በግምት እንዲፈልግ እናደርጋለን
         if not result:
             cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{clean_title}%",))
             result = cursor.fetchone()
@@ -41,7 +35,7 @@ def get_doctrine_from_db(title):
         print(f"Error: {e}")
         return None
 
-# --- ዋና ዋና Functions (እነዚህ አልተቀየሩም) ---
+# --- ዋና ዋና Functions ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
     welcome_text = (
@@ -61,7 +55,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     
-    # ለተወሰኑ ርዕሶች Sub-menu ካለህ እዚህ ይቀጥላል
+    # --- Sub-menus (አንተ የሰጠኸው ሙሉ ኮድ) ---
     if text == "ስለ ሥላሴ":
         kb = [['እግዚአብሔር ያሕዌ'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
@@ -69,7 +63,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "ኢየሱስ ማነው?":
         kb = [['የኢየሱስ ሰውነቱ', 'የኢየሱስ አምላክነቱ'], ['መሲህ መሆኑ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("👑 **ስለ ጌታ ኢየሱስ ክርስቶስ ማንነት**\n\nኢየሱስ ክርስቶስ እውነተኛ አምላክና እውነተኛ ሰው ነው።",  reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")                           
+        await update.message.reply_text("👑 **ስለ ጌታ ኢየሱስ ክርስቶስ ማንነት**\n\nኢየሱስ ክርስቶስ እውነተኛ አምላክና እውነተኛ ሰው ነው።",  reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
     if text == "ኢየሱስ አብ ነውን?":
@@ -78,36 +72,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if text == "ድኅነት(መዳን)":
-        kb = [['የደህንነትን ማረጋገጫ 1'], ['የደህንነትን ማረጋገጫ 2'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("🛡 **ድኅነት (መዳን)**\n\nድኅነት ማለት ከኃጢአት እና ከሞት የሚያዳን ጥምረት ነው።", 
-                                       reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
-        return
+        kb = [['የደህንነትን ማረጋገጫ 1'], ['የደህንነትን ማረጋገጫ 2'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        await update.message.reply_text("🛡 **ድኅነት (መዳን)**\n\nድኅነት ማለት ከኃጢአት እና ከሞት የሚያዳን ጥምረት ነው።", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
+        return
 
-     if text == "የሃይማኖት መግለጫዎች":
+    if text == "የሃይማኖት መግለጫዎች":
         kb = [['የኒቅያ የሃይማኖት መግለጫ'], ['የአትናቴዎስ የሃይማኖት መግለጫ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("📚 **የሃይማኖት መግለጫዎች**\n\n", 
-                                       reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
+        await update.message.reply_text("📚 **የሃይማኖት መግለጫዎች**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return 
 
-     if text == "መልስ ለሰባልዮሳውያን":
+    if text == "መልስ ለሰባልዮሳውያን":
         kb = [['ሰው የኾነው አምላክ' ], ['ጌታችን ኢየሱስ “ከፍጥረት በፊት በኩር” ተብሎ መጠራቱ ምንን ያሳያል?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("📖 **መልስ ለሰባልዮሳውያን**\n\n", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
+        await update.message.reply_text("📖 **መልስ ለሰባልዮሳውያን**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
-
-     if text == "የመጽሐፍ ቅዱስ ግጭቶች 1?":
+    if text == "የመጽሐፍ ቅዱስ ግጭቶች 1?":
         kb = [['የይሁዳ አሟሟት እንዴት ነበር?'], ['ኢየሱስ አጥምቋል ወይንስ አላጠመቀም?'], ['እግዚአብሔር ሰዎችን ይፈትናል ወይንስ አይፈትንም?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች**\n\n", 
-                                       reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
+        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 1**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
-    
 
     if text == "የመጽሐፍ ቅዱስ ግጭቶች 2?":
         kb = [['የእግዚአብሔር የበኵር ልጅ ማነው?'], ['ዳዊት የገደለው ሠራዊት ብዛት ስንት ነው?'], ['እግዚአብሔር ይጸጸታል ወይንስ አይጸጸትም?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች**\n\n", 
-                                       reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
+        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
-      
+
     if text == "ትንሣኤው":
         resurrection_text = (
             "🌅 **የጌታችን የኢየሱስ ክርስቶስ ትንሣኤ**\n\n"
@@ -115,12 +103,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• **የድል አዋጅ፦** ሞትን ድል አድርጎ ተነስቷል።\n"
             "• **የእኛ ተስፋ፦** በእርሱ የሚያምኑ ሁሉ የዘላለም ሕይወት ይኖራቸዋል።\n"
             "• **ታሪካዊ እውነት፦** መቃብሩ ባዶ መሆኑ ትንሣኤው እውነት መሆኑን ያረጋግጣል።"
-    
         )
         await update.message.reply_text(resurrection_text, parse_mode="Markdown")
         return
 
-    # ከ Database ፈልጎ ያመጣል
+    # --- Database ፍለጋ ---
     content = get_doctrine_from_db(text)
     if content:
         await update.message.reply_text(content, parse_mode="Markdown")
@@ -134,6 +121,7 @@ async def filter_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"⚠️ ምስል መላክ አይፈቀድም።")
 
 async def content_guard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.text: return
     text = update.message.text.lower()
     for word in BANNED_WORDS:
         if word in text:
