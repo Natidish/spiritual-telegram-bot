@@ -44,7 +44,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "ከታች ያሉትን አማራጮች በመጫን መማር ትችላላችሁ።"
     )
     kb = [
-        ['ስለ ሥላሴ', 'ኢየሱስ ማነው?'], 
+        ['ስለ ሥላሴ*', 'ኢየሱስ ማነው?*'], 
         ['ድኅነት(መዳን)', 'ትንሣኤው'], 
         ['የሃይማኖት መግለጫዎች', 'ኢየሱስ አብ ነውን?'],
         ['የመጽሐፍ ቅዱስ ግጭቶች 1?', 'የመጽሐፍ ቅዱስ ግጭቶች 2?'],
@@ -56,12 +56,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     
     # --- Sub-menus (አንተ የሰጠኸው ሙሉ ኮድ) ---
-    if text == "ስለ ሥላሴ":
+    if text == "ስለ ሥላሴ*":
         kb = [['እግዚአብሔር ያሕዌ'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
-    if text == "ኢየሱስ ማነው?":
+    if text == "ኢየሱስ ማነው?*":
         kb = [['የኢየሱስ ሰውነቱ', 'የኢየሱስ አምላክነቱ'], ['መሲህ መሆኑ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("👑 **ስለ ጌታ ኢየሱስ ክርስቶስ ማንነት**\n\nኢየሱስ ክርስቶስ እውነተኛ አምላክና እውነተኛ ሰው ነው።",  reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
