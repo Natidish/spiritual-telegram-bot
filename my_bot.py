@@ -18,12 +18,23 @@ DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
 # --- Database ስራዎች ---
 def get_doctrine_from_db(title):
     try:
-        conn = sqlite3.connect(DB_PATH) # እዚህ ጋር DB_PATH ተጠቀምን
+        import os
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
+        
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        # ርዕሱን በትክክል እንዲያገኝ LIKE እና strip እንጠቀማለን
-        search_term = f"%{title.strip()}%"
-        cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (search_term,))
+        
+        # ርዕሱን ለማመሳሰል strip() እንጠቀማለን
+        clean_title = title.strip()
+        cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
+        
+        # ካላገኘው 'LIKE' ተጠቅሞ በግምት እንዲፈልግ እናደርጋለን
         result = cursor.fetchone()
+        if not result:
+            cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{clean_title}%",))
+            result = cursor.fetchone()
+            
         conn.close()
         return result[0] if result else None
     except Exception as e:
