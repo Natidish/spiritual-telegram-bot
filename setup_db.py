@@ -1,3 +1,4 @@
+import sqlite3
 import os
 
 def setup():
@@ -7,14 +8,11 @@ def setup():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS doctrines") # አሮጌውን ዳታ አጥፍቶ በአዲስ እንዲተካ
+    cursor.execute("DROP TABLE IF EXISTS doctrines")
     cursor.execute('''CREATE TABLE doctrines (title TEXT PRIMARY KEY, content TEXT)''')
 
-    # እዚህ ጋር ሁሉንም 33 መረጃዎች አንድ በአንድ አስገባቸው
-    # (ርዕሱ በ DB Browser ላይ ካለው ጋር አንድ አይነት መሆኑን አረጋግጥ)
     data = [
-        
-       ("ኢየሱስ ማነው?*", "👑 ጌታ ኢየሱስ ክርስቶስ ማነው?..."),
+        ("ኢየሱስ ማነው?*", "👑 ጌታ ኢየሱስ ክርስቶስ ማነው?..."),
         ("ስለ ሥላሴ ", "🙏 ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ..."),
         ("ድኅነት(መዳን)", "🛡️ ድኅነት (መዳን) ማብራሪያ..."),
         ("የኢየሱስ አምላክነቱ", "📖 የኢየሱስ አምላክነቱ ጥቅሶች..."),
@@ -25,11 +23,11 @@ def setup():
         # ... ሌሎችንም እስከ 33 ድረስ እዚህ ጋር ጨምር ...
         ("ትንሣኤው", "🌅 የጌታችን የኢየሱስ ክርስቶስ ትንሣኤ..."),
         ("መልስ ለሰባልዮሳውያን"),
-        ("ኢየሱስ አብ ነውን?")
+        ("ኢየሱስ አብ ነውን?") 
     ]
 
-    # መረጃውን ወደ ሰርቨሩ ዳታቤዝ ማስገባት
-  cursor.executemany("INSERT INTO doctrines VALUES (?, ?)", data)
+    # ከዚህ በታች ያለው መስመር በትክክል ከአራተኛው ፊደል (Indentation) ጀምሮ መጻፉን አረጋግጥ
+    cursor.executemany("INSERT INTO doctrines VALUES (?, ?)", data)
     conn.commit()
     conn.close()
     print("ዳታቤዙ በአዲስ መረጃ ተሞልቷል!")
