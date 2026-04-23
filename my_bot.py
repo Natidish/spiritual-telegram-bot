@@ -19,20 +19,24 @@ def get_doctrine_from_db(title):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # ርዕሱን ለማመሳሰል strip() እንጠቀማለን
+        # 1. ጽሑፉን ከባዶ ቦታዎች ማጽዳት
         clean_title = title.strip()
-        cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
         
+        # 2. በመጀመሪያ ቀጥታ ፍለጋ
+        cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
         result = cursor.fetchone()
-        # ካላገኘው 'LIKE' ተጠቅሞ በግምት እንዲፈልግ እናደርጋለን
+        
+        # 3. ካልተገኘ በከፊል ተመሳሳይነት (LIKE) መፈለግ
         if not result:
-            cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{clean_title}%",))
+            # ምልክቶችን (እንደ ? ወይም *) አጥፍቶ መፈለግ
+            search_term = clean_title.replace("?", "").replace("*", "").replace("(", "").replace(")", "")
+            cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{search_term}%",))
             result = cursor.fetchone()
             
         conn.close()
         return result[0] if result else None
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Database Error: {e}")
         return None
 
 # --- ዋና ዋና Functions ---
