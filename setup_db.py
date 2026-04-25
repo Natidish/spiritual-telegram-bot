@@ -4,7 +4,7 @@ import os
 def setup():
     # በ Render ላይ ፋይሉ እንዲገኝ ትክክለኛውን ቦታ መፈለጊያ
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
+    DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db-journal")
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -15,8 +15,8 @@ def setup():
 
     # እያንዳንዱ መረጃ (ርዕስ, ይዘት) መሆኑን አረጋግጥ
     data = [
-        ("ኢየሱስ ማነው?*, 👑 ጌታ ኢየሱስ ክርስቶስ ማነው?..."),
-        ("ስለ ሥላሴ*, 🙏 ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ..."),
+        ("ኢየሱስ ማነው?*", "👑 ጌታ ኢየሱስ ክርስቶስ ማነው?..."),
+        ("ስለ ሥላሴ*", "🙏 ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ..."),
         ("ድኅነት(መዳን)", "🛡️ ድኅነት (መዳን) ማብራሪያ..."),
         ("የኢየሱስ አምላክነቱ", "📖 የኢየሱስ አምላክነቱ ጥቅሶች..."),
         ("የኢየሱስ ሰውነቱ", "👤 የኢየሱስ ሰውነቱ ማብራሪያ..."),
