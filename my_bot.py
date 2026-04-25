@@ -52,7 +52,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ['ድኅነት(መዳን)', 'ትንሣኤው'], 
         ['የሃይማኖት መግለጫዎች', 'ኢየሱስ አብ ነውን?'],
         ['የመጽሐፍ ቅዱስ ግጭቶች 1?', 'የመጽሐፍ ቅዱስ ግጭቶች 2?'],
-        ['መልስ ለሰባልዮሳውያን']
+        ['መልስ ለሰባልዮሳውያን'],
+        ['ወንጌል ምድነው?']
     ]
     await update.message.reply_text(welcome_text, reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
 
@@ -61,7 +62,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # --- Sub-menus (አንተ የሰጠኸው ሙሉ ኮድ) ---
     if text == "ስለ ሥላሴ*":
-        kb = [['እግዚአብሔር አብ!'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['እግዚአብሔር ያሕዌ!'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
@@ -100,17 +101,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
 
-    if text == "ትንሣኤው":
-        resurrection_text = (
-            "🌅 **የጌታችን የኢየሱስ ክርስቶስ ትንሣኤ**\n\n"
-            "ትንሣኤ የክርስትና እምነት መሠረት ነው። (1 ቆሮ 15:14)\n\n"
-            "• **የድል አዋጅ፦** ሞትን ድል አድርጎ ተነስቷል።\n"
-            "• **የእኛ ተስፋ፦** በእርሱ የሚያምኑ ሁሉ የዘላለም ሕይወት ይኖራቸዋል።\n"
-            "• **ታሪካዊ እውነት፦** መቃብሩ ባዶ መሆኑ ትንሣኤው እውነት መሆኑን ያረጋግጣል።"
-        )
-        await update.message.reply_text(resurrection_text, parse_mode="Markdown")
+    if text == "ወንጌል ምድነው ?":
+        kb == [['ወንጌል ምድነው.?'], ['ትንሣኤው ምድነው?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
-
+     
     # --- Database ፍለጋ ---
     content = get_doctrine_from_db(text)
     if content:
