@@ -86,7 +86,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return 
 
     if text == "መልስ ለሰባልዮሳውያን":
-        kb = [['ሰው የኾነው አምላክ' ], ['ጌታችን ኢየሱስ “ከፍጥረት በፊት በኩር” ተብሎ መጠራቱ ምንን ያሳያል?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['ሰው የኾነው አምላክ..'], ['ጌታችን ኢየሱስ “ከፍጥረት በፊት በኩር” ተብሎ መጠራቱ ምንን ያሳያል?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("📖 **መልስ ለሰባልዮሳውያን**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
