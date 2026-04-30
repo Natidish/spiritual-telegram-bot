@@ -82,7 +82,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if text == "የሃይማኖት መግለጫዎች":
-        kb = [['የኒቅያ የሃይማኖት መግለጫ'], ['የአትናቴዎስ የሃይማኖት መግለጫ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['የኒቅያ የሃይማኖት መግለጫ'], ['የአትናቴዎስ የሃይማኖት መግለጫ'], ['የሐዋርያት የእምነት መግለጫ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("📚 **የሃይማኖት መግለጫዎች**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return 
 
