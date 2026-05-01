@@ -101,7 +101,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
 
-    if text == "ወንጌል ምድነው ?":
+    if text == "ወንጌል ምድነው?":
         kb == [['ወንጌል ምድነው.?'], ['ትንሣኤው ምድነው?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
