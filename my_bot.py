@@ -1,5 +1,8 @@
 import sqlite3
 import os
+import threading
+import http.server
+import socketserver
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
@@ -12,6 +15,17 @@ BANNED_WORDS = ["ውሻ", "ደደብ", "ደንቆሮ", "ባለጌ", "ውሸታ�
 # የዳታቤዝ ፋይል መንገድ
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
+
+# --- Render ፖርት እንዳይዘጋ የውሸት ሰርቨር መክፈቻ (በነፃ ለመጠቀም ወሳኝ ነው) ---
+def run_fake_server():
+    port = int(os.environ.get("PORT", 10000))
+    handler = http.server.SimpleHTTPRequestHandler
+    try:
+        with socketserver.TCPServer(("", port), handler) as httpd:
+            print(f"የRender ፖርት ማታለያ ሰርቨር በፖርት {port} ላይ ተከፍቷል...")
+            httpd.serve_forever()
+    except Exception as e:
+        print(f"Fake Server Error: {e}")
 
 # --- Database ስራዎች ---
 def get_doctrine_from_db(title):
@@ -45,7 +59,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
         f"ሰላም {user_name}! 👋\n\n"
         "ወደ መንፈሳዊ የእውቀት ቦት እንኳን ደህና መጡ። "
-        "ከታች ያሉትን አማራጮች በመጫን መማር ትችላላችሁ።"
+        "ከታች ያሉትን አማራጮች በመጫን መማር ትችላላችሁ。"
     )
     kb = [
         ['ስለ ሥላሴ*', 'ኢየሱስ ማነው?*'], 
@@ -60,7 +74,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     
-    # --- Sub-menus (አንተ የሰጠኸው ሙሉ ኮድ) ---
+    # --- Sub-menus ---
     if text == "ስለ ሥላሴ*":
         kb = [['እግዚአብሔር ያሕዌ'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
@@ -103,7 +117,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "ወንጌል ምድነው?":
         kb = [['ወንጌል ምድነው.?'], ['ትንሣኤው ምድነው?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        await update.message.reply_text("📖 **የመጽሐፍ ቅዱስ ግጭቶች 2**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
+        # እዚህ ጋር ርዕሱን ከግጭቶች ወደ ወንጌል አስተካክዬዋለሁ
+        await update.message.reply_text("📖 **ስለ ወንጌል እና ትንሣኤ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
      
     # --- Database ፍለጋ ---
@@ -116,16 +131,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ '{text}' በሚል ርዕስ መረጃ አልተገኘም።")
 
 async def filter_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.delete()
-    await update.message.reply_text(f"⚠️ ምስል መላክ አይፈቀድም።")
+    try:
+        await update.message.delete()
+        await update.message.reply_text(f"⚠️ ምስል መላክ አይፈቀድም።")
+    except Exception:
+        pass
 
 async def content_guard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.text: return
     text = update.message.text.lower()
     for word in BANNED_WORDS:
         if word in text:
-            await update.message.delete()
-            await update.message.reply_text("❗️ ስድብ አይፈቀድም።")
+            try:
+                await update.message.delete()
+                await update.message.reply_text("❗️ ስድብ አይፈቀድም።")
+            except Exception:
+                pass
             return
     await handle_message(update, context)
 
@@ -133,6 +154,9 @@ if __name__ == '__main__':
     if not MY_TOKEN:
         print("Error: BOT_TOKEN is missing!")
     else:
+        # Render ፖርት ስካን እንዳይሰናከል ከጀርባ ሰርቨር ማስጀመር
+        threading.Thread(target=run_fake_server, daemon=True).start()
+        
         app = ApplicationBuilder().token(MY_TOKEN).build()
         app.add_handler(CommandHandler("start", start))
         app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, filter_media))
