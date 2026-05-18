@@ -76,7 +76,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # --- Sub-menus ---
     if text == "ስለ ሥላሴ*":
-        kb = [['እግዚአብሔር ያሕዌ'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['እግዚአብሔር ያሕዌ!'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
@@ -101,7 +101,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return 
 
     if text == "መልስ ለሰባልዮሳውያን":
-        kb = [['ሰው የኾነው አምላክ..'], ['ጌታችን ኢየሱስ “ከፍጥረት በፊት በኩር” ተብሎ መጠራቱ ምንን ያሳያል?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['ሰው የኾነው አምላክ'], ['ጌታችን ኢየሱስ “ከፍጥረት በፊት በኩር” ተብሎ መጠራቱ ምንን ያሳያል?'], ['ኢሳይያስ 9፥6 እና የኦንሊ ጂሰስ (Oneness) አስተምህሮ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("📖 **መልስ ለሰባልዮሳውያን**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
         return
 
@@ -116,7 +116,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if text == "ወንጌል ምድነው?":
-        kb = [['ወንጌል ምድነው.?'], ['ትንሣኤው ምድነው?'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
+        kb = [['ወንጌል ምድነው?'], ['ትንሣኤው'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         # እዚህ ጋር ርዕሱን ከግጭቶች ወደ ወንጌል አስተካክዬዋለሁ
         await update.message.reply_text("📖 **ስለ ወንጌል እና ትንሣኤ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
