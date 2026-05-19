@@ -65,20 +65,37 @@ def get_doctrine_from_db(title):
         print(f"Database Error: {e}")
         return None
 
-# --- ተጠቃሚን የማስጠንቀቅ እና የመቅጣት ሲስተም ---
+# --- ተጠቃሚን የማስጠንቀቅ እና የመቅጣት ሲስተም (ከቻናል የሚመጡትን የሚጠብቅ) ---
 async def add_warning_and_check(update: Update, context: ContextTypes.DEFAULT_TYPE, reason: str):
-    user = update.effective_user
     chat = update.effective_chat
     
-    # ቦቱ በግሩፕ ውስጥ ካልሆነ ወይም መልዕክቱ ከአስተዳዳሪ የመጣ ከሆነ ዝም ይላል
+    # ቦቱ በግሩፕ ውስጥ ካልሆነ ዝም ይላል
     if chat.type == "private":
         return
 
-    # የአስተዳዳሪዎችን መልዕክት ቦቱ አይነካም
-    member = await context.bot.get_chat_member(chat_id=chat.id, user_id=user.id)
-    if member.status in ['administrator', 'creator']:
+    # 1. መልዕክቱ ከታሰረ ቻናል (Linked Channel) በራስ-ሰር የመጣ ከሆነ ቦቱ በፍጹም አይንካው!
+    if update.message.sender_chat and getattr(chat, 'linked_chat_id', None) and update.message.sender_chat.id == chat.linked_chat_id:
         return
 
+    # 2. መልዕክቱ ከማንኛውም ቻናል Forward የተደረገ (is_automatic_forward) ከሆነም አይንካው
+    if update.message.forward_from_chat or getattr(update.message, 'is_automatic_forward', False):
+        return
+
+    user = update.effective_user
+
+    # 3. መልዕክቱ የመጣው ከግሩፑ አስተዳዳሪዎች (Admins) ከሆነ ቦቱ አይንካቸውም
+    if user:
+        try:
+            member = await context.bot.get_chat_member(chat_id=chat.id, user_id=user.id)
+            if member.status in ['administrator', 'creator']:
+                return
+        except Exception:
+            pass
+    else:
+        # የአንዳንድ አውቶማቲክ መልዕክቶች ተጠቃሚ (user) ስለሌላቸው እንዳይጠፉ ዝም ይበል
+        return
+
+    # ከላይ ያሉትን ህጎች በሙሉ ካለፈ ተራ ተጠቃሚ ጥፋት አጥፍቷል ማለት ነው፤ መልዕክቱ ይጠፋል
     try:
         await update.message.delete()
     except Exception:
@@ -115,11 +132,14 @@ async def add_warning_and_check(update: Update, context: ContextTypes.DEFAULT_TY
         except Exception as e:
             print(f"Banning Error: {e}")
     else:
-        await context.bot.send_message(
-            chat_id=chat.id, 
-            text=f"⚠️ <b>{user.first_name}</b> {reason} ማውጣት ወይም መላክ የተከለከለ ነው!\n❌ <b>ማስጠንቀቂያ፦ {warn_count}/3</b> (3 ሲሞላ ለ1 ሳምንት ይታገዳሉ)", 
-            parse_mode="HTML"
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=chat.id, 
+                text=f"⚠️ <b>{user.first_name}</b> {reason} ማውጣት ወይም መላክ የተከለከለ ነው!\n❌ <b>ማስጠንቀቂያ፦ {warn_count}/3</b> (3 ሲሞላ ለ1 ሳምንት ይታገዳሉ)", 
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
 
 # --- አዲስ ሰው ሲገባ ሰላምታ መስጫ (Welcome) ---
 async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
