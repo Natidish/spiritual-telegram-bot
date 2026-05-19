@@ -3,20 +3,37 @@ import os
 import threading
 import http.server
 import socketserver
-from telegram import Update, ReplyKeyboardMarkup
+import datetime
+from telegram import Update, ReplyKeyboardMarkup, ChatPermissions
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
 # Render ላይ BOT_TOKEN መኖሩን ያረጋግጣል
 MY_TOKEN = os.getenv("BOT_TOKEN")
 
-# ስድቦችን መከላከያ
-BANNED_WORDS = ["ውሻ", "ደደብ", "ደንቆሮ", "ባለጌ", "ውሸታም", "ሰነፍ", "ሌባ"] 
+# የስድብ እና የባለጌ ቃላት ዝርዝር
+BANNED_WORDS = [
+    "ውሻ", "ደደብ", "ደንቆሮ", "ባለጌ", "ውሸታም", "ሰነፍ", "ሌባ", 
+    "ሴክስ", "sex", "በዳ", "ብዳ", "ቂንጥር", "ቁላ", "ጡት", "እርቃን"
+] 
 
 # የዳታቤዝ ፋይል መንገድ
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
 
-# --- Render ፖርት እንዳይዘጋ የውሸት ሰርቨር መክፈቻ (በነፃ ለመጠቀም ወሳኝ ነው) ---
+# --- የቅጣት ሰንጠረዥ በራስ-ሰር መፍጠሪያ ---
+def init_warnings_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_warnings (
+            user_id INTEGER PRIMARY KEY, 
+            warn_count INTEGER DEFAULT 0
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# --- Render ፖርት እንዳይዘጋ የውሸት ሰርቨር መክፈቻ ---
 def run_fake_server():
     port = int(os.environ.get("PORT", 10000))
     handler = http.server.SimpleHTTPRequestHandler
@@ -27,22 +44,17 @@ def run_fake_server():
     except Exception as e:
         print(f"Fake Server Error: {e}")
 
-# --- Database ስራዎች ---
+# --- Database የትምህርት ፍለጋ ---
 def get_doctrine_from_db(title):
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        
-        # 1. ጽሑፉን ከባዶ ቦታዎች ማጽዳት
         clean_title = title.strip()
         
-        # 2. በመጀመሪያ ቀጥታ ፍለጋ
         cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
         result = cursor.fetchone()
         
-        # 3. ካልተገኘ በከፊል ተመሳሳይነት (LIKE) መፈለግ
         if not result:
-            # ምልክቶችን (እንደ ? ወይም *) አጥፍቶ መፈለግ
             search_term = clean_title.replace("?", "").replace("*", "").replace("(", "").replace(")", "")
             cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{search_term}%",))
             result = cursor.fetchone()
@@ -52,6 +64,76 @@ def get_doctrine_from_db(title):
     except Exception as e:
         print(f"Database Error: {e}")
         return None
+
+# --- ተጠቃሚን የማስጠንቀቅ እና የመቅጣት ሲስተም ---
+async def add_warning_and_check(update: Update, context: ContextTypes.DEFAULT_TYPE, reason: str):
+    user = update.effective_user
+    chat = update.effective_chat
+    
+    # ቦቱ በግሩፕ ውስጥ ካልሆነ ወይም መልዕክቱ ከአስተዳዳሪ የመጣ ከሆነ ዝም ይላል
+    if chat.type == "private":
+        return
+
+    # የአስተዳዳሪዎችን መልዕክት ቦቱ አይነካም
+    member = await context.bot.get_chat_member(chat_id=chat.id, user_id=user.id)
+    if member.status in ['administrator', 'creator']:
+        return
+
+    try:
+        await update.message.delete()
+    except Exception:
+        pass
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT warn_count FROM user_warnings WHERE user_id = ?", (user.id,))
+    row = cursor.fetchone()
+    
+    if row is None:
+        cursor.execute("INSERT INTO user_warnings (user_id, warn_count) VALUES (?, 1)", (user.id,))
+        warn_count = 1
+    else:
+        warn_count = row[0] + 1
+        cursor.execute("UPDATE user_warnings SET warn_count = ? WHERE user_id = ?", (warn_count, user.id))
+    
+    conn.commit()
+    conn.close()
+
+    if warn_count >= 3:
+        # ለ1 ሳምንት መቅጣት (Restrict/Mute)
+        until_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+        permissions = ChatPermissions(can_send_messages=False, can_send_media_messages=False, can_send_other_messages=False)
+        try:
+            await context.bot.restrict_chat_member(chat_id=chat.id, user_id=user.id, permissions=permissions, until_date=until_date)
+            # የቅጣት ታሪኩን መልሰን 0 እናደርገዋለን
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE user_warnings SET warn_count = 0 WHERE user_id = ?", (user.id,))
+            conn.commit()
+            conn.close()
+            await context.bot.send_message(chat_id=chat.id, text=f"🚨 <b>{user.first_name}</b> ህግ 3 ጊዜ በመጣሱ ምክንያት ለ 1 ሳምንት ከግሩፑ ታግዷል (Muted)!", parse_mode="HTML")
+        except Exception as e:
+            print(f"Banning Error: {e}")
+    else:
+        await context.bot.send_message(
+            chat_id=chat.id, 
+            text=f"⚠️ <b>{user.first_name}</b> {reason} ማውጣት ወይም መላክ የተከለከለ ነው!\n❌ <b>ማስጠንቀቂያ፦ {warn_count}/3</b> (3 ሲሞላ ለ1 ሳምንት ይታገዳሉ)", 
+            parse_mode="HTML"
+        )
+
+# --- አዲስ ሰው ሲገባ ሰላምታ መስጫ (Welcome) ---
+async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    for member in update.message.new_chat_members:
+        if member.is_bot:
+            continue
+        welcome_text = (
+            f"ሰላም {member.first_name} 👋 ወደ መንፈሳዊ ግሩፓችን በደህና መጡ! ቃለ ህይወትን ይማሩ።\n\n"
+            "⚠️ <b>የግሩፑ ህግጋት፦</b>\n"
+            "1. ስድብ እና ባለጌ ቃላት ፈጽሞ አይፈቀዱም።\n"
+            "2. ማንኛውንም ሊንክ፣ እርቃን ፎቶ ወይም ቪዲዮ መላክ ክልክል ነው።\n"
+            "👉 ህግ የሚጥስ 3 ጊዜ ከተገሰጸ በኋላ ለ1 ሳምንት ይታገዳል!"
+        )
+        await update.message.reply_text(welcome_text, parse_mode="HTML")
 
 # --- ዋና ዋና Functions ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -117,7 +199,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "ወንጌል ምድነው?":
         kb = [['ወንጌል ምድነው?'], ['ትንሣኤው'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
-        # እዚህ ጋር ርዕሱን ከግጭቶች ወደ ወንጌል አስተካክዬዋለሁ
         await update.message.reply_text("📖 **ስለ ወንጌል እና ትንሣኤ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
      
@@ -128,38 +209,56 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "ወደ ዋናው" in text:
         await start(update, context)
     else:
-        await update.message.reply_text(f"❌ '{text}' በሚል ርዕስ መረጃ አልተገኘም።")
+        # በግሩፕ ውስጥ ከሆነና ርዕስ ካልሆነ ዝም እንዲል (ስህተት እንዳይልክ)
+        if update.effective_chat.type == "private":
+            await update.message.reply_text(f"❌ '{text}' በሚል ርዕስ መረጃ አልተገኘም።")
 
+# --- ፎቶ እና ቪዲዮ መከላከያ ---
 async def filter_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        await update.message.delete()
-        await update.message.reply_text(f"⚠️ ምስል መላክ አይፈቀድም።")
-    except Exception:
-        pass
+    await add_warning_and_check(update, context, "በዚህ ግሩፕ ውስጥ ፎቶ ወይም ቪዲዮ መላክ")
 
+# --- የጽሑፍ፣ የስድብ እና የሊንክ ጥበቃ ---
 async def content_guard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message.text: return
+    if not update.message.text: 
+        return
+    
     text = update.message.text.lower()
+    
+    # 1. የሊንክ መከላከያ (Telegram link, http, https, .com)
+    if "http://" in text or "https://" in text or "t.me/" in text or ".com" in text:
+        await add_warning_and_check(update, context, "ማንኛውንም አይነት ሊንክ መላክ")
+        return
+
+    # 2. የስድብ እና የወሲብ ቃላት መከላከያ
     for word in BANNED_WORDS:
         if word in text:
-            try:
-                await update.message.delete()
-                await update.message.reply_text("❗️ ስድብ አይፈቀድም።")
-            except Exception:
-                pass
+            await add_warning_and_check(update, context, "የስድብ ወይም የብልግና ቃል")
             return
+            
+    # ሁሉም ነገር ሰላም ከሆነ መልዕክቱን ያስተናግዳል
     await handle_message(update, context)
 
 if __name__ == '__main__':
     if not MY_TOKEN:
         print("Error: BOT_TOKEN is missing!")
     else:
-        # Render ፖርት ስካን እንዳይሰናከል ከጀርባ ሰርቨር ማስጀመር
+        # የቅጣት ዳታቤዝ ሰንጠረዥን ማስጀመር
+        init_warnings_db()
+        
+        # Render ፖርት እንዳይዘጋ የጀርባ ሰርቨር ማስጀመር
         threading.Thread(target=run_fake_server, daemon=True).start()
         
         app = ApplicationBuilder().token(MY_TOKEN).build()
         app.add_handler(CommandHandler("start", start))
-        app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, filter_media))
+        
+        # አዲስ ሰው ሲገባ መያዣ
+        app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
+        
+        # ሚዲያ (ፎቶ፣ ቪዲዮ፣ ሰነድ) መከላከያ
+        app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.ANIMATION, filter_media))
+        
+        # የጽሑፍ መቆጣጠሪያ
         app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), content_guard))
+        
         print("ቦቱ ስራ ጀምሯል...")
         app.run_polling()
