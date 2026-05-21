@@ -34,20 +34,22 @@ def run_fake_server():
     except Exception as e:
         print(f"Fake Server Error: {e}")
 
+# 🔥 አዲሱ እና እጅግ ብልህ የፍለጋ ዘዴ (ዳታቤዝህ ላይ ፊደል ቢሳሳት እንኳ ይፈልጋል)
 def get_doctrine_from_db(title):
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        clean_title = title.strip()
         
-        cursor.execute("SELECT content FROM doctrines WHERE title = ?", (clean_title,))
+        # 1. ጽሑፉን ማጽዳት
+        clean_title = title.strip().replace("?", "").replace("*", "").replace("(", "").replace(")", "")
+        
+        # የ 'ኅ' እና 'ግ' ስህተትን ለመከላከል (ለምሳሌ ድኅነት እና ድግነት)
+        clean_title = clean_title.replace("ኅ", "%").replace("ግ", "%")
+
+        # 2. በ "LIKE" አቀራረብ በነፃነት መፈለግ (በግራና በቀኝ ያሉ አላስፈላጊ Spaceዎችን ይကျော်ላል)
+        cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{clean_title}%",))
         result = cursor.fetchone()
         
-        if not result:
-            search_term = clean_title.replace("?", "").replace("*", "").replace("(", "").replace(")", "")
-            cursor.execute("SELECT content FROM doctrines WHERE title LIKE ?", (f"%{search_term}%",))
-            result = cursor.fetchone()
-            
         conn.close()
         return result[0] if result else None
     except Exception as e:
@@ -59,7 +61,6 @@ async def add_warning_and_check(update: Update, context: ContextTypes.DEFAULT_TY
     if chat.type == "private":
         return
 
-    # ቻናል ፖስት ጥበቃ
     if update.message.sender_chat and getattr(chat, 'linked_chat_id', None) and update.message.sender_chat.id == chat.linked_chat_id:
         return
     if update.message.forward_from_chat or getattr(update.message, 'is_automatic_forward', False):
@@ -152,6 +153,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     
+    # ሰዑድ-ምናሌዎች (Sub-menus) ከተጫኑ ወደ ውስጠኛው ክፍል ይመራቸዋል
     if text == "ስለ ሥላሴ*":
         kb = [['እግዚአብሔር ያሕዌ!'], ['ኢየሱስ ያሕዌ', 'መንፈስ ቅዱስ ያሕዌ'], ['🏠 ወደ ዋናው ዝርዝር ተመለስ']]
         await update.message.reply_text("🔎 **ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
@@ -197,6 +199,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📖 **ስለ ወንጌል እና ትንሣኤ**", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")  
         return
      
+    # ሰዑድ-ምናሌ ካልሆነ ዳታቤዝ ውስጥ ይፈልጋል
     content = get_doctrine_from_db(text)
     if content:
         await update.message.reply_text(content, parse_mode="Markdown")
