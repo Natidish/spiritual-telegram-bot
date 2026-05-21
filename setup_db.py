@@ -2,19 +2,24 @@ import sqlite3
 import os
 
 def setup():
-    # በ Render ላይ ፋይሉ እንዲገኝ ትክክለኛውን ቦታ መፈለጊያ
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DB_PATH = os.path.join(BASE_DIR, "spiritual_bot.db")
     
+    # 🚨 ዋናው መፍትሔ፦ የድሮው የተበላሸ ፋይል ካለ መጀመሪያ ሙሉ በሙሉ ከነጭራሹ ያጠፋዋል
+    if os.path.exists(DB_PATH):
+        try:
+            os.remove(DB_PATH)
+            print("የድሮው ዳታቤዝ ፋይል በተሳካ ሁኔታ ተደምስሷል!")
+        except Exception as e:
+            print(f"የድሮውን ፋይል ማጥፋት አልተቻለም፦ {e}")
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # ሰንጠረዡን መፍጠር (ካለ አጥፍቶ በአዲስ ይተካዋል)
-    cursor.execute("DROP TABLE IF EXISTS doctrines")
-    cursor.execute('''CREATE TABLE doctrines (title TEXT PRIMARY KEY, content TEXT)''')
+    # ሰንጠረዡን በአዲስ መፍጠር
+    cursor.execute('''CREATE TABLE IF NOT EXISTS doctrines (title TEXT PRIMARY KEY, content TEXT)''')
 
-    # እያንዳንዱ መረጃ (ርዕስ, ይዘት) መሆኑን በጥንቃቄ ማስተካከል። 
-    # (ማሳሰቢያ፦ ለጊዜው የሁሉም ይዘት ዝርዝር መረጃ እዚህ ይገባል ተብሏል፣ በኋላ በዋናው ይዘትህ ትተካዋለህ)
+    # ያንተ 33ቱ ርዕሶች በሙሉ (ከነ ቢትኖቻቸው ምልክት ጋር ፍጹም በትክክል ተስተካክሏል)
     data = [
         ("ስለ ሥላሴ*", "🙏 ስለ ቅድስት ሥላሴ ዝርዝር ማብራሪያ እዚህ ይገባል..."),
         ("እግዚአብሔር ያሕዌ!", "📖 እግዚአብሔር ያሕዌ ስለመሆኑ ዝርዝር ማብራሪያ እዚህ ይገባል።"),
@@ -59,7 +64,6 @@ def setup():
         ("ትንሣኤው ምድነው?", "🌅 ትንሣኤው ምንድነው ለሚለው ጥያቄ መልስ እዚህ ይገባል።")
     ]
 
-    # ዳታውን ማስገባት (ሁለት bindings ብቻ (title, content) መሆናቸውን ያረጋግጣል)
     cursor.executemany("INSERT INTO doctrines VALUES (?, ?)", data)
     conn.commit()
     conn.close()
