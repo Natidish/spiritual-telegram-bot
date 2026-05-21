@@ -168,8 +168,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ['ድኅነት(መዳን)', 'ትንሣኤው'], 
         ['የሃይማኖት መግለጫዎች', 'ኢየሱስ አብ ነውን?'],
         ['የመጽሐፍ ቅዱስ ግጭቶች 1?', 'የመጽሐፍ ቅዱስ ግጭቶች 2?'],
-        ['መልስ ለሰባልዮሳውያን'],
-        ['ወንጌል ምድነው?']
+        ['መልስ ለአርዮሳውያን', 'ወንጌል ምድነው?'],
+        
     ]
     await update.message.reply_text(welcome_text, reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode="Markdown")
 
